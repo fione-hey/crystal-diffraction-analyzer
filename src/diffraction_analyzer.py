@@ -260,44 +260,67 @@ class CrystalDiffractionAnalyzer:
         """
         Comprehensive visualization for 2D diffraction analysis
         """
-        fig = plt.figure(figsize=(16, 12))
+        # Create figure with better spacing
+        fig = plt.figure(figsize=(18, 14))
+        
+        # Use gridspec for better control over spacing
+        from matplotlib.gridspec import GridSpec
+        gs = GridSpec(2, 3, figure=fig, hspace=0.35, wspace=0.3, 
+                     left=0.08, right=0.95, top=0.93, bottom=0.08)
         
         # Plot 1: Original image with detected peaks
-        ax1 = plt.subplot(2, 3, 1)
+        ax1 = fig.add_subplot(gs[0, 0])
         im1 = ax1.imshow(image, cmap='viridis', origin='lower')
         if len(peaks) > 0:
-            ax1.plot(peaks[:, 1], peaks[:, 0], 'ro', markersize=8, markerfacecolor='none', 
+            ax1.plot(peaks[:, 1], peaks[:, 0], 'ro', markersize=6, markerfacecolor='none', 
                     markeredgewidth=2, label=f'{len(peaks)} peaks')
-            # Add peak numbers
+            # Add peak numbers (smaller, less crowded)
             for i, peak in enumerate(peaks):
-                ax1.annotate(str(i), (peak[1], peak[0]), xytext=(5, 5), 
-                           textcoords='offset points', color='red', fontweight='bold')
-        ax1.set_title('Original Image + Detected Peaks')
-        ax1.legend()
-        plt.colorbar(im1, ax=ax1)
+                if i < 15:  # Only label first 15 peaks to avoid clutter
+                    ax1.annotate(str(i), (peak[1], peak[0]), xytext=(3, 3), 
+                               textcoords='offset points', color='red', fontsize=8, fontweight='bold')
+        
+        ax1.set_title('Original Image + Detected Peaks', fontsize=12, pad=10)
+        ax1.set_xlabel('X (pixels)', fontsize=10)
+        ax1.set_ylabel('Y (pixels)', fontsize=10)
+        if len(peaks) > 0:
+            ax1.legend(fontsize=9)
+        
+        # Colorbar with proper spacing
+        cbar1 = plt.colorbar(im1, ax=ax1, shrink=0.8)
+        cbar1.ax.tick_params(labelsize=8)
         
         # Plot 2: Background subtracted image
-        ax2 = plt.subplot(2, 3, 2)
+        ax2 = fig.add_subplot(gs[0, 1])
         im2 = ax2.imshow(peak_info['background_subtracted'], cmap='viridis', origin='lower')
-        ax2.set_title('Background Subtracted')
-        plt.colorbar(im2, ax=ax2)
+        ax2.set_title('Background Subtracted', fontsize=12, pad=10)
+        ax2.set_xlabel('X (pixels)', fontsize=10)
+        ax2.set_ylabel('Y (pixels)', fontsize=10)
+        
+        cbar2 = plt.colorbar(im2, ax=ax2, shrink=0.8)
+        cbar2.ax.tick_params(labelsize=8)
         
         # Plot 3: Peak intensity distribution
-        ax3 = plt.subplot(2, 3, 3)
+        ax3 = fig.add_subplot(gs[0, 2])
         if len(intensities) > 0:
-            bars = ax3.bar(range(len(intensities)), intensities, alpha=0.7)
-            ax3.set_xlabel('Peak Number')
-            ax3.set_ylabel('Intensity')
-            ax3.set_title('Peak Intensities')
+            bars = ax3.bar(range(len(intensities)), intensities, alpha=0.7, width=0.8)
+            ax3.set_xlabel('Peak Number', fontsize=10)
+            ax3.set_ylabel('Intensity', fontsize=10)
+            ax3.set_title('Peak Intensities', fontsize=12, pad=10)
             ax3.grid(True, alpha=0.3)
+            ax3.tick_params(labelsize=8)
             
             # Color bars by intensity
             max_int = np.max(intensities)
             for bar, intensity in zip(bars, intensities):
                 bar.set_color(plt.cm.plasma(intensity / max_int))
+        else:
+            ax3.text(0.5, 0.5, 'No peaks detected', ha='center', va='center', 
+                    transform=ax3.transAxes, fontsize=12)
+            ax3.set_title('Peak Intensities', fontsize=12, pad=10)
         
         # Plot 4: Radial intensity profile
-        ax4 = plt.subplot(2, 3, 4)
+        ax4 = fig.add_subplot(gs[1, 0])
         center_y, center_x = np.array(image.shape) // 2
         y, x = np.ogrid[:image.shape[0], :image.shape[1]]
         r = np.sqrt((x - center_x)**2 + (y - center_y)**2)
@@ -315,76 +338,82 @@ class CrystalDiffractionAnalyzer:
                 radial_profile.append(0)
         
         ax4.plot(r_bins[:-1], radial_profile, 'b-', linewidth=2)
-        ax4.set_xlabel('Radial Distance (pixels)')
-        ax4.set_ylabel('Average Intensity')
-        ax4.set_title('Radial Intensity Profile')
+        ax4.set_xlabel('Radial Distance (pixels)', fontsize=10)
+        ax4.set_ylabel('Average Intensity', fontsize=10)
+        ax4.set_title('Radial Intensity Profile', fontsize=12, pad=10)
         ax4.grid(True, alpha=0.3)
+        ax4.tick_params(labelsize=8)
         
         # Plot 5: Reciprocal space map (if q_vectors provided)
-        ax5 = plt.subplot(2, 3, 5)
+        ax5 = fig.add_subplot(gs[1, 1])
         if q_vectors is not None and len(q_vectors) > 0:
             # 2D projection of reciprocal space
-            ax5.scatter(q_vectors[:, 0], q_vectors[:, 1], 
-                       c=intensities if len(intensities) > 0 else 'blue', 
-                       s=100, alpha=0.7, cmap='plasma')
+            scatter = ax5.scatter(q_vectors[:, 0], q_vectors[:, 1], 
+                                c=intensities if len(intensities) > 0 else 'blue', 
+                                s=80, alpha=0.7, cmap='plasma')
             
             # Add origin
-            ax5.plot(0, 0, 'k+', markersize=15, markeredgewidth=3, label='Origin')
+            ax5.plot(0, 0, 'k+', markersize=12, markeredgewidth=2, label='Origin')
             
-            # Add peak labels
-            for i, q in enumerate(q_vectors):
-                ax5.annotate(str(i), (q[0], q[1]), xytext=(5, 5), 
-                           textcoords='offset points', fontweight='bold')
+            # Add peak labels (only first 10 to avoid clutter)
+            for i, q in enumerate(q_vectors[:10]):
+                ax5.annotate(str(i), (q[0], q[1]), xytext=(3, 3), 
+                           textcoords='offset points', fontsize=8, fontweight='bold')
             
-            ax5.set_xlabel('qx (Å⁻¹)')
-            ax5.set_ylabel('qy (Å⁻¹)')
-            ax5.set_title('Reciprocal Space Map (qx-qy)')
+            ax5.set_xlabel('qx (Å⁻¹)', fontsize=10)
+            ax5.set_ylabel('qy (Å⁻¹)', fontsize=10)
+            ax5.set_title('Reciprocal Space Map (qx-qy)', fontsize=12, pad=10)
             ax5.grid(True, alpha=0.3)
-            ax5.legend()
+            ax5.legend(fontsize=9)
             ax5.axis('equal')
+            ax5.tick_params(labelsize=8)
         else:
             ax5.text(0.5, 0.5, 'Reciprocal space mapping\nrequires detector parameters', 
-                    ha='center', va='center', transform=ax5.transAxes)
-            ax5.set_title('Reciprocal Space Map')
+                    ha='center', va='center', transform=ax5.transAxes, fontsize=10)
+            ax5.set_title('Reciprocal Space Map', fontsize=12, pad=10)
         
         # Plot 6: Analysis summary
-        ax6 = plt.subplot(2, 3, 6)
+        ax6 = fig.add_subplot(gs[1, 2])
         ax6.axis('off')
         
-        # Create summary text
-        summary_text = f"""
-        ANALYSIS SUMMARY
-        ================
-        Total peaks found: {len(peaks)}
-        Noise level: {peak_info['noise_level']:.4f}
-        Detection threshold: {peak_info['threshold']:.4f}
-        
-        Image dimensions: {image.shape}
-        Background level: {np.mean(peak_info['background']):.2f}
-        
-        Peak Statistics:
-        """
+        # Create summary text with better formatting
+        summary_lines = [
+            "ANALYSIS SUMMARY",
+            "=" * 20,
+            f"Total peaks found: {len(peaks)}",
+            f"Noise level: {peak_info['noise_level']:.4f}",
+            f"Detection threshold: {peak_info['threshold']:.4f}",
+            "",
+            f"Image dimensions: {image.shape}",
+            f"Background level: {np.mean(peak_info['background']):.2f}",
+            "",
+            "Peak Statistics:"
+        ]
         
         if len(intensities) > 0:
-            summary_text += f"""
-        - Max intensity: {np.max(intensities):.2f}
-        - Mean intensity: {np.mean(intensities):.2f}
-        - Std intensity: {np.std(intensities):.2f}
-        """
+            summary_lines.extend([
+                f"- Max intensity: {np.max(intensities):.2f}",
+                f"- Mean intensity: {np.mean(intensities):.2f}",
+                f"- Std intensity: {np.std(intensities):.2f}"
+            ])
         
         if q_vectors is not None and len(q_vectors) > 0:
             q_mags = np.linalg.norm(q_vectors, axis=1)
-            summary_text += f"""
+            summary_lines.extend([
+                "",
+                "Reciprocal Space:",
+                f"- q-range: {np.min(q_mags):.3f} - {np.max(q_mags):.3f} Å⁻¹",
+                f"- d-spacing range: {2*np.pi/np.max(q_mags):.2f} - {2*np.pi/np.min(q_mags):.2f} Å"
+            ])
         
-        Reciprocal Space:
-        - q-range: {np.min(q_mags):.3f} - {np.max(q_mags):.3f} Å⁻¹
-        - d-spacing range: {2*np.pi/np.max(q_mags):.2f} - {2*np.pi/np.min(q_mags):.2f} Å
-        """
+        # Display text with proper spacing
+        summary_text = '\n'.join(summary_lines)
+        ax6.text(0.05, 0.95, summary_text, transform=ax6.transAxes, 
+                fontfamily='monospace', fontsize=9, verticalalignment='top',
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.5))
         
-        ax6.text(0.1, 0.9, summary_text, transform=ax6.transAxes, 
-                fontfamily='monospace', fontsize=10, verticalalignment='top')
+        ax6.set_title('Summary', fontsize=12, pad=10)
         
-        plt.tight_layout()
         return fig
 
 # Example usage for crystal diffraction
@@ -458,6 +487,9 @@ def demo_crystal_diffraction():
     
     # Create comprehensive visualization
     fig = analyzer.visualize_2d_analysis(image_with_noise, peaks, intensities, peak_info, q_vectors)
+    
+    # Adjust layout to prevent overlapping
+    plt.suptitle('Crystal Diffraction Analysis Results', fontsize=16, y=0.98)
     plt.show()
     
     # Print reciprocal space coordinates
@@ -723,9 +755,16 @@ class MonteCarloDiffraction:
         """
         Visualize Monte Carlo analysis results
         """
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+        # Create figure with proper spacing
+        fig = plt.figure(figsize=(16, 10))
+        
+        # Use gridspec for better control
+        from matplotlib.gridspec import GridSpec
+        gs = GridSpec(2, 2, figure=fig, hspace=0.4, wspace=0.3, 
+                     left=0.08, right=0.95, top=0.92, bottom=0.10)
         
         # Plot 1: Image with uncertainty ellipses
+        ax1 = fig.add_subplot(gs[0, 0])
         ax1.imshow(image, cmap='viridis', origin='lower')
         
         if 'mean_positions' in bootstrap_results:
@@ -734,7 +773,7 @@ class MonteCarloDiffraction:
             
             for i, (pos, unc) in enumerate(zip(positions, uncertainties)):
                 # Plot mean position
-                ax1.plot(pos[1], pos[0], 'ro', markersize=8)
+                ax1.plot(pos[1], pos[0], 'ro', markersize=6)
                 
                 # Plot uncertainty ellipse (2-sigma)
                 from matplotlib.patches import Ellipse
@@ -743,51 +782,75 @@ class MonteCarloDiffraction:
                                 alpha=0.3, facecolor='red')
                 ax1.add_patch(ellipse)
                 
-                # Label
-                ax1.text(pos[1]+5, pos[0]+5, str(i), color='white', fontweight='bold')
+                # Label (only first 10 to avoid clutter)
+                if i < 10:
+                    ax1.text(pos[1]+3, pos[0]+3, str(i), color='white', fontweight='bold', fontsize=8)
         
-        ax1.set_title('Peak Positions with Uncertainties')
-        ax1.set_xlabel('X (pixels)')
-        ax1.set_ylabel('Y (pixels)')
+        ax1.set_title('Peak Positions with Uncertainties', fontsize=12, pad=10)
+        ax1.set_xlabel('X (pixels)', fontsize=10)
+        ax1.set_ylabel('Y (pixels)', fontsize=10)
+        ax1.tick_params(labelsize=8)
         
         # Plot 2: Position uncertainties
+        ax2 = fig.add_subplot(gs[0, 1])
         if 'position_uncertainties' in bootstrap_results:
             uncertainties = bootstrap_results['position_uncertainties']
             unc_magnitudes = np.linalg.norm(uncertainties, axis=1)
             
-            ax2.bar(range(len(unc_magnitudes)), unc_magnitudes, alpha=0.7)
-            ax2.set_xlabel('Peak Number')
-            ax2.set_ylabel('Position Uncertainty (pixels)')
-            ax2.set_title('Peak Position Uncertainties')
+            bars = ax2.bar(range(len(unc_magnitudes)), unc_magnitudes, alpha=0.7, width=0.8)
+            ax2.set_xlabel('Peak Number', fontsize=10)
+            ax2.set_ylabel('Position Uncertainty (pixels)', fontsize=10)
+            ax2.set_title('Peak Position Uncertainties', fontsize=12, pad=10)
             ax2.grid(True, alpha=0.3)
+            ax2.tick_params(labelsize=8)
+            
+            # Color bars by uncertainty magnitude
+            max_unc = np.max(unc_magnitudes)
+            for bar, unc in zip(bars, unc_magnitudes):
+                bar.set_color(plt.cm.viridis(unc / max_unc))
+        else:
+            ax2.text(0.5, 0.5, 'No uncertainty data\navailable', ha='center', va='center', 
+                    transform=ax2.transAxes, fontsize=12)
+            ax2.set_title('Peak Position Uncertainties', fontsize=12, pad=10)
         
         # Plot 3: Intensity uncertainties
+        ax3 = fig.add_subplot(gs[1, 0])
         if 'intensity_uncertainties' in bootstrap_results:
             intensities = bootstrap_results['mean_intensities']
             intensity_errors = bootstrap_results['intensity_uncertainties']
             
             ax3.errorbar(range(len(intensities)), intensities, yerr=intensity_errors,
-                        fmt='o', capsize=5, alpha=0.7)
-            ax3.set_xlabel('Peak Number')
-            ax3.set_ylabel('Intensity')
-            ax3.set_title('Peak Intensities with Error Bars')
+                        fmt='o', capsize=4, alpha=0.7, markersize=5)
+            ax3.set_xlabel('Peak Number', fontsize=10)
+            ax3.set_ylabel('Intensity', fontsize=10)
+            ax3.set_title('Peak Intensities with Error Bars', fontsize=12, pad=10)
             ax3.grid(True, alpha=0.3)
+            ax3.tick_params(labelsize=8)
+        else:
+            ax3.text(0.5, 0.5, 'No intensity data\navailable', ha='center', va='center', 
+                    transform=ax3.transAxes, fontsize=12)
+            ax3.set_title('Peak Intensities with Error Bars', fontsize=12, pad=10)
         
         # Plot 4: Robustness to noise
+        ax4 = fig.add_subplot(gs[1, 1])
         if robustness_results:
             noise_levels = [r['noise_level'] for r in robustness_results]
             mean_peaks = [r['mean_peaks'] for r in robustness_results]
             std_peaks = [r['std_peaks'] for r in robustness_results]
             
             ax4.errorbar(noise_levels, mean_peaks, yerr=std_peaks, 
-                        fmt='o-', capsize=3, alpha=0.7)
+                        fmt='o-', capsize=3, alpha=0.7, linewidth=2, markersize=4)
             ax4.set_xscale('log')
-            ax4.set_xlabel('Noise Level (relative to max intensity)')
-            ax4.set_ylabel('Number of Peaks Detected')
-            ax4.set_title('Peak Detection Robustness')
+            ax4.set_xlabel('Noise Level (relative to max intensity)', fontsize=10)
+            ax4.set_ylabel('Number of Peaks Detected', fontsize=10)
+            ax4.set_title('Peak Detection Robustness', fontsize=12, pad=10)
             ax4.grid(True, alpha=0.3)
+            ax4.tick_params(labelsize=8)
+        else:
+            ax4.text(0.5, 0.5, 'No robustness data\navailable', ha='center', va='center', 
+                    transform=ax4.transAxes, fontsize=12)
+            ax4.set_title('Peak Detection Robustness', fontsize=12, pad=10)
         
-        plt.tight_layout()
         return fig
 
 def demo_monte_carlo_diffraction():
@@ -837,6 +900,7 @@ def demo_monte_carlo_diffraction():
     # 4. Visualize everything
     print("\n4. Creating comprehensive visualization...")
     fig = mc.visualize_monte_carlo_results(simulated_image, bootstrap_results, robustness_results)
+    plt.suptitle('Monte Carlo Diffraction Analysis Results', fontsize=16, y=0.96)
     plt.show()
     
     # 5. Summary statistics
