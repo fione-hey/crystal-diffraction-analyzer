@@ -266,7 +266,7 @@ class CrystalDiffractionAnalyzer:
         # Use gridspec for better control over spacing
         from matplotlib.gridspec import GridSpec
         gs = GridSpec(2, 3, figure=fig, hspace=0.35, wspace=0.3, 
-                     left=0.08, right=0.95, top=0.93, bottom=0.08)
+                     left=0.08, right=0.95, top=0.88, bottom=0.08)
         
         # Plot 1: Original image with detected peaks
         ax1 = fig.add_subplot(gs[0, 0])
@@ -761,7 +761,7 @@ class MonteCarloDiffraction:
         # Use gridspec for better control
         from matplotlib.gridspec import GridSpec
         gs = GridSpec(2, 2, figure=fig, hspace=0.4, wspace=0.3, 
-                     left=0.08, right=0.95, top=0.92, bottom=0.10)
+                     left=0.08, right=0.95, top=0.88, bottom=0.10)
         
         # Plot 1: Image with uncertainty ellipses
         ax1 = fig.add_subplot(gs[0, 0])
