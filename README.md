@@ -12,14 +12,15 @@ Developed for crystal diffraction analysis at ORNL SSN Diffraction Section.
 - Crystal symmetry analysis and lattice parameter estimation
 - Comprehensive visualization and error reporting
 
-## Quick Start
+## Installation
 
-```python
-from src.diffraction_analyzer import CrystalDiffractionAnalyzer, demo_crystal_diffraction
+### Method 1: Download ZIP (Easiest)
+1. Click the green "Code" button above
+2. Click "Download ZIP" 
+3. Unzip the file on your computer
+4. Follow setup steps below
 
-# Run the demo
-demo_crystal_diffraction()
-
-# Analyze your own data
-analyzer = CrystalDiffractionAnalyzer()
-peaks, intensities, info = analyzer.find_2d_peaks_robust(your_image)
+### Method 2: Git Clone
+```bash
+git clone https://github.com/ilovethis48/crystal-diffraction-analyzer.git
+cd crystal-diffraction-analyzer
