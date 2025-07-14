@@ -27,6 +27,7 @@ cd crystal-diffraction-analyzer
 Setup Steps (Required for Both Methods)
 bash# Create virtual environment
 python -m venv diffraction_env
+```
 
 # Activate environment
 # Windows:
